@@ -1,5 +1,4 @@
 <script setup>
-import { Label as RekaLabel } from "reka-ui"
 import { cn } from "@/lib/utils"
 
 const props = defineProps({
@@ -9,10 +8,10 @@ const props = defineProps({
 </script>
 
 <template>
-    <RekaLabel
+    <label
         :for="props.for"
         :class="cn('text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70', props.class)"
     >
         <slot />
-    </RekaLabel>
+    </label>
 </template>

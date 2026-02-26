@@ -22,6 +22,10 @@ export const authApi = {
         return http.post('/logout');
     },
 
+    updatePassword(data) {
+        return http.post('/user/password', data);
+    },
+
     /**
      * Fetch the authenticated user.
      */

@@ -1,9 +1,13 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import { useAuthStore } from '../stores/auth.store';
 
-// Lazy-loaded page components
 const LoginPage = () => import('../pages/LoginPage.vue');
 const DashboardPage = () => import('../pages/DashboardPage.vue');
+const ItemsPage = () => import('../pages/ItemsPage.vue');
+const CategoriesPage = () => import('../pages/CategoriesPage.vue');
+const ItemMovementsPage = () => import('../pages/ItemMovementsPage.vue');
+const ItemVariantsPage = () => import('../pages/ItemVariantsPage.vue');
+const ReferenceTypesPage = () => import('../pages/ReferenceTypesPage.vue');
 
 // Layout
 const MainLayout = () => import('../layouts/MainLayout.vue');
@@ -28,6 +32,31 @@ const routes = [
                 path: '/dashboard',
                 name: 'dashboard',
                 component: DashboardPage,
+            },
+            {
+                path: '/items',
+                name: 'items',
+                component: ItemsPage,
+            },
+            {
+                path: '/categories',
+                name: 'categories',
+                component: CategoriesPage,
+            },
+            {
+                path: '/item-movements',
+                name: 'item-movements',
+                component: ItemMovementsPage,
+            },
+            {
+                path: '/item-variants',
+                name: 'item-variants',
+                component: ItemVariantsPage,
+            },
+            {
+                path: '/reference-types',
+                name: 'reference-types',
+                component: ReferenceTypesPage,
             },
         ],
     },

@@ -81,6 +81,23 @@ export const useAuthStore = defineStore('auth', () => {
         }
     }
 
+    async function updatePassword(formData) {
+        isLoading.value = true;
+        errors.value = {};
+        try {
+            const { data } = await authApi.updatePassword(formData);
+            user.value = data.data;
+            return data;
+        } catch (error) {
+            if (error.response?.status === 422) {
+                errors.value = error.response.data.errors ?? {};
+            }
+            throw error;
+        } finally {
+            isLoading.value = false;
+        }
+    }
+
     return {
         user,
         isLoading,
@@ -90,5 +107,6 @@ export const useAuthStore = defineStore('auth', () => {
         login,
         register,
         logout,
+        updatePassword,
     };
 });

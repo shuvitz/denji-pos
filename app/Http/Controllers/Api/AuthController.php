@@ -72,13 +72,36 @@ class AuthController extends Controller
         ]);
     }
 
-    /**
-     * Get the authenticated user.
-     */
     public function me(Request $request): JsonResponse
     {
         return response()->json([
             'data'    => $request->user(),
+            'message' => 'ok',
+        ]);
+    }
+
+    public function updatePassword(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'current_password'      => ['required', 'string'],
+            'password'              => ['required', 'string', 'min:8', 'confirmed'],
+        ]);
+
+        $updated = $this->authService->updatePassword(
+            $request->user(),
+            $validated['current_password'],
+            $validated['password'],
+        );
+
+        if (! $updated) {
+            return response()->json([
+                'data'    => null,
+                'message' => 'The provided password does not match your current password.',
+            ], 422);
+        }
+
+        return response()->json([
+            'data'    => $request->user()->fresh(),
             'message' => 'ok',
         ]);
     }

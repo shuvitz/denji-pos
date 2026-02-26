@@ -27,11 +27,6 @@ http.interceptors.response.use(
             return http(originalRequest);
         }
 
-        // Unauthenticated — redirect to login
-        if (error.response?.status === 401) {
-            window.location.href = '/login';
-        }
-
         return Promise.reject(error);
     }
 );

@@ -1,21 +1,30 @@
 <script setup>
-import { Primitive } from "reka-ui"
 import { cn } from "@/lib/utils"
 import { buttonVariants } from "."
 
-const props = withDefaults(defineProps(), {
-    as: "button",
-    variant: "default",
-    size: "default",
+const props = defineProps({
+    as: { type: String, default: "button" },
+    asChild: { type: Boolean, default: false },
+    variant: { type: String, default: "default" },
+    size: { type: String, default: "default" },
+    class: { type: String, default: "" },
 })
 </script>
 
 <template>
-    <Primitive
-        :as="as"
-        :as-child="asChild"
-        :class="cn(buttonVariants({ variant, size }), props.class)"
+    <component
+        v-if="!props.asChild"
+        :is="props.as"
+        v-bind="$attrs"
+        :class="cn(buttonVariants({ variant: props.variant, size: props.size }), props.class)"
     >
         <slot />
-    </Primitive>
+    </component>
+    <span
+        v-else
+        v-bind="$attrs"
+        :class="cn(buttonVariants({ variant: props.variant, size: props.size }), props.class)"
+    >
+        <slot />
+    </span>
 </template>

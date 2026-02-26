@@ -45,7 +45,7 @@
                     </div>
 
                     <!-- Submit -->
-                    <Button type="submit" class="w-full" :disabled="auth.isLoading">
+                    <Button type="submit" class="w-full">
                         <span v-if="auth.isLoading">Please wait…</span>
                         <span v-else>{{ isLogin ? 'Sign In' : 'Create Account' }}</span>
                     </Button>

@@ -21,22 +21,29 @@ class AuthService
         ]);
     }
 
-    /**
-     * Attempt to authenticate the user.
-     */
     public function login(array $credentials): bool
     {
         return Auth::attempt($credentials);
     }
 
-    /**
-     * Log the user out.
-     */
     public function logout(): void
     {
         Auth::guard('web')->logout();
         
         session()->invalidate();
         session()->regenerateToken();
+    }
+
+    public function updatePassword(User $user, string $currentPassword, string $newPassword): bool
+    {
+        if (! Hash::check($currentPassword, $user->password)) {
+            return false;
+        }
+
+        $user->forceFill([
+            'password' => Hash::make($newPassword),
+        ])->save();
+
+        return true;
     }
 }
