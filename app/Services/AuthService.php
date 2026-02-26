@@ -29,7 +29,7 @@ class AuthService
     public function logout(): void
     {
         Auth::guard('web')->logout();
-        
+
         session()->invalidate();
         session()->regenerateToken();
     }
