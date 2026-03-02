@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CategoryController;
+use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\ItemController;
 use App\Http\Controllers\Api\ItemMovementController;
 use App\Http\Controllers\Api\ItemVariantController;
@@ -41,5 +42,7 @@ Route::middleware('web')->group(function () {
         Route::post('/reference-types', [ReferenceTypeController::class, 'store']);
         Route::put('/reference-types/{referenceType}', [ReferenceTypeController::class, 'update']);
         Route::delete('/reference-types/{referenceType}', [ReferenceTypeController::class, 'destroy']);
+
+        Route::get('/dashboard/stats', [DashboardController::class, 'stats']);
     });
 });
