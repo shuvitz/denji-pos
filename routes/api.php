@@ -44,5 +44,6 @@ Route::middleware('web')->group(function () {
         Route::delete('/reference-types/{referenceType}', [ReferenceTypeController::class, 'destroy']);
 
         Route::get('/dashboard/stats', [DashboardController::class, 'stats']);
+        Route::get('/dashboard/trends', [DashboardController::class, 'trends']);
     });
 });

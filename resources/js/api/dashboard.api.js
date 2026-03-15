@@ -5,3 +5,7 @@ export async function fetchDashboardStats() {
     return data.data;
 }
 
+export async function fetchDashboardTrends(days = 30) {
+    const { data } = await http.get('/dashboard/trends', { params: { days } });
+    return data.data;
+}

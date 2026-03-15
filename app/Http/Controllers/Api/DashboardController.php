@@ -8,6 +8,7 @@ use App\Models\ItemMovement;
 use App\Models\ItemVariant;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Carbon;
 
 class DashboardController extends Controller
 {
@@ -51,5 +52,43 @@ class DashboardController extends Controller
             'message' => 'ok',
         ]);
     }
-}
 
+    public function trends(): JsonResponse
+    {
+        $days = (int) request()->integer('days', 30);
+        if ($days < 1) {
+            $days = 30;
+        }
+
+        $start = Carbon::now()->subDays($days - 1)->startOfDay();
+        $rows = DB::table('item_movements as m')
+            ->join('item_variants as v', 'v.id', '=', 'm.variant_id')
+            ->where('m.movement_at', '>=', $start)
+            ->selectRaw('DATE(m.movement_at) as d')
+            ->selectRaw('COALESCE(SUM(CASE WHEN m.type = "out" THEN m.qty * v.selling_price ELSE 0 END), 0) as sales')
+            ->selectRaw('COALESCE(SUM(CASE WHEN m.type = "in" THEN m.qty * v.purchase_price ELSE 0 END), 0) as purchase')
+            ->groupBy('d')
+            ->orderBy('d')
+            ->get()
+            ->keyBy('d');
+
+        $series = [];
+        $date = $start->copy();
+        $end = Carbon::now()->startOfDay();
+        while ($date->lte($end)) {
+            $key = $date->toDateString();
+            $row = $rows->get($key);
+            $series[] = [
+                'date' => $key,
+                'sales' => (float) ($row->sales ?? 0),
+                'purchase' => (float) ($row->purchase ?? 0),
+            ];
+            $date->addDay();
+        }
+
+        return response()->json([
+            'data' => $series,
+            'message' => 'ok',
+        ]);
+    }
+}
