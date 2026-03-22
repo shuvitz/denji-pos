@@ -91,4 +91,59 @@ class DashboardController extends Controller
             'message' => 'ok',
         ]);
     }
+
+    public function topSellingVariants(): JsonResponse
+    {
+        $days = (int) request()->integer('days', 30);
+        if ($days < 1) {
+            $days = 30;
+        }
+
+        $limit = (int) request()->integer('limit', 10);
+        if ($limit < 1) {
+            $limit = 10;
+        }
+        if ($limit > 50) {
+            $limit = 50;
+        }
+
+        $start = Carbon::now()->subDays($days - 1)->startOfDay();
+
+        $rows = DB::table('item_movements as m')
+            ->join('item_variants as v', 'v.id', '=', 'm.variant_id')
+            ->join('items as i', 'i.id', '=', 'v.item_id')
+            ->where('m.type', '=', 'out')
+            ->where('m.movement_at', '>=', $start)
+            ->selectRaw('v.id as variant_id')
+            ->selectRaw('i.name as item_name')
+            ->selectRaw('v.name as variant_name')
+            ->selectRaw('v.sku as sku')
+            ->selectRaw('COALESCE(SUM(m.qty), 0) as qty')
+            ->selectRaw('COALESCE(SUM(m.qty * v.selling_price), 0) as amount')
+            ->groupBy('v.id', 'i.name', 'v.name', 'v.sku')
+            ->orderByDesc('qty')
+            ->limit($limit)
+            ->get();
+
+        $data = $rows->map(function ($row) {
+            $label = $row->item_name;
+            if (! empty($row->variant_name)) {
+                $label .= ' - '.$row->variant_name;
+            } elseif (! empty($row->sku)) {
+                $label .= ' - '.$row->sku;
+            }
+
+            return [
+                'variant_id' => (int) $row->variant_id,
+                'label' => $label,
+                'qty' => (int) $row->qty,
+                'amount' => (float) $row->amount,
+            ];
+        })->values();
+
+        return response()->json([
+            'data' => $data,
+            'message' => 'ok',
+        ]);
+    }
 }

@@ -45,5 +45,6 @@ Route::middleware('web')->group(function () {
 
         Route::get('/dashboard/stats', [DashboardController::class, 'stats']);
         Route::get('/dashboard/trends', [DashboardController::class, 'trends']);
+        Route::get('/dashboard/top-selling-variants', [DashboardController::class, 'topSellingVariants']);
     });
 });
