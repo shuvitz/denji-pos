@@ -16,6 +16,7 @@ class ItemMovement extends Model
         'qty',
         'cost_per_unit',
         'reference_id',
+        'customer_id',
         'note',
         'movement_at',
         'created_by',
@@ -38,6 +39,11 @@ class ItemMovement extends Model
     public function referenceType()
     {
         return $this->belongsTo(ReferenceType::class, 'reference_id');
+    }
+
+    public function customer()
+    {
+        return $this->belongsTo(Customer::class);
     }
 
     public function creator()

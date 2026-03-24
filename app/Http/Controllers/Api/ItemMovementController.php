@@ -14,7 +14,7 @@ class ItemMovementController extends Controller
     public function index(Request $request): JsonResponse
     {
         $movements = ItemMovement::query()
-            ->with(['item', 'variant', 'referenceType'])
+            ->with(['item', 'variant', 'referenceType', 'customer'])
             ->orderByDesc('movement_at')
             ->orderByDesc('id')
             ->paginate(10);
@@ -33,6 +33,7 @@ class ItemMovementController extends Controller
             'qty' => ['required', 'integer', 'min:1'],
             'cost_per_unit' => ['nullable', 'numeric', 'min:0'],
             'reference_id' => ['nullable', 'integer', 'exists:reference_types,id'],
+            'customer_id' => ['nullable', 'integer', 'exists:customers,id'],
             'note' => ['nullable', 'string'],
             'movement_at' => ['nullable', 'date'],
         ]);
@@ -65,13 +66,14 @@ class ItemMovementController extends Controller
                 'qty' => $validated['qty'],
                 'cost_per_unit' => $validated['cost_per_unit'] ?? null,
                 'reference_id' => $validated['reference_id'] ?? null,
+                'customer_id' => $validated['customer_id'] ?? null,
                 'note' => $validated['note'] ?? null,
                 'movement_at' => $validated['movement_at'] ?? now(),
                 'created_by' => $request->user()->id,
             ]);
         });
 
-        $movement->load(['item', 'variant', 'referenceType']);
+        $movement->load(['item', 'variant', 'referenceType', 'customer']);
 
         return response()->json([
             'data' => $movement,
@@ -83,17 +85,81 @@ class ItemMovementController extends Controller
     {
         $validated = $request->validate([
             'reference_id' => ['nullable', 'integer', 'exists:reference_types,id'],
+            'customer_id' => ['nullable', 'integer', 'exists:customers,id'],
             'note' => ['nullable', 'string'],
             'movement_at' => ['nullable', 'date'],
         ]);
 
         $movement->update($validated);
-        $movement->load(['item', 'variant', 'referenceType']);
+        $movement->load(['item', 'variant', 'referenceType', 'customer']);
 
         return response()->json([
             'data' => $movement,
             'message' => 'ok',
         ]);
+    }
+
+    public function storeBulk(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'type' => ['required', 'in:in,out,adjustment'],
+            'customer_id' => ['nullable', 'integer', 'exists:customers,id'],
+            'movement_at' => ['nullable', 'date'],
+            'reference_id' => ['nullable', 'integer', 'exists:reference_types,id'],
+            'note' => ['nullable', 'string'],
+            'items' => ['required', 'array', 'min:1'],
+            'items.*.variant_id' => ['required', 'integer', 'exists:item_variants,id'],
+            'items.*.qty' => ['required', 'integer', 'min:1'],
+            'items.*.cost_per_unit' => ['nullable', 'numeric', 'min:0'],
+        ]);
+
+        $movements = [];
+
+        DB::transaction(function () use ($request, $validated, &$movements) {
+            foreach ($validated['items'] as $row) {
+                $variant = ItemVariant::lockForUpdate()->findOrFail($row['variant_id']);
+
+                $delta = match ($validated['type']) {
+                    'in' => $row['qty'],
+                    'out' => -$row['qty'],
+                    'adjustment' => $row['qty'],
+                    default => 0,
+                };
+
+                $newStock = $variant->stock + $delta;
+                if ($newStock < 0) {
+                    abort(422, 'Insufficient stock for this movement.');
+                }
+
+                $variant->stock = $newStock;
+                $variant->save();
+
+                $movements[] = ItemMovement::create([
+                    'item_id' => $variant->item_id,
+                    'variant_id' => $variant->id,
+                    'type' => $validated['type'],
+                    'qty' => $row['qty'],
+                    'cost_per_unit' => $row['cost_per_unit'] ?? null,
+                    'reference_id' => $validated['reference_id'] ?? null,
+                    'customer_id' => $validated['customer_id'] ?? null,
+                    'note' => $validated['note'] ?? null,
+                    'movement_at' => $validated['movement_at'] ?? now(),
+                    'created_by' => $request->user()->id,
+                ]);
+            }
+        });
+
+        $ids = collect($movements)->pluck('id')->all();
+        $fresh = ItemMovement::query()
+            ->whereIn('id', $ids)
+            ->with(['item', 'variant', 'referenceType', 'customer'])
+            ->orderByDesc('id')
+            ->get();
+
+        return response()->json([
+            'data' => $fresh,
+            'message' => 'ok',
+        ], 201);
     }
 
     public function destroy(ItemMovement $movement): JsonResponse

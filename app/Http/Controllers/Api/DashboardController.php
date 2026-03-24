@@ -16,6 +16,30 @@ class DashboardController extends Controller
     {
         $totals = [];
 
+        $days = (int) request()->integer('days', 30);
+        if ($days < 1) {
+            $days = 30;
+        }
+        if ($days > 3650) {
+            $days = 3650;
+        }
+
+        $endParam = request()->query('end');
+        $endDate = null;
+        if (is_string($endParam) && $endParam !== '') {
+            try {
+                $endDate = Carbon::createFromFormat('Y-m-d', $endParam);
+            } catch (\Throwable) {
+                try {
+                    $endDate = Carbon::parse($endParam);
+                } catch (\Throwable) {
+                    $endDate = null;
+                }
+            }
+        }
+        $endAt = ($endDate ?? Carbon::now())->endOfDay();
+        $startAt = $endAt->copy()->subDays($days - 1)->startOfDay();
+
         // Inventory totals
         $totals['total_items'] = Item::query()->count();
         $totals['total_variants'] = ItemVariant::query()->count();
@@ -37,6 +61,7 @@ class DashboardController extends Controller
         $sales = DB::table('item_movements as m')
             ->join('item_variants as v', 'v.id', '=', 'm.variant_id')
             ->where('m.type', '=', 'out')
+            ->whereBetween('m.movement_at', [$startAt, $endAt])
             ->selectRaw('COALESCE(SUM(m.qty), 0) as total_qty')
             ->selectRaw('COALESCE(SUM(m.qty * v.selling_price), 0) as total_sales_amount')
             ->selectRaw('COALESCE(SUM(m.qty * v.purchase_price), 0) as total_cost_amount')
@@ -59,13 +84,33 @@ class DashboardController extends Controller
         if ($days < 1) {
             $days = 30;
         }
+        if ($days > 3650) {
+            $days = 3650;
+        }
 
-        $start = Carbon::now()->subDays($days - 1)->startOfDay();
+        $endParam = request()->query('end');
+        $endDate = null;
+        if (is_string($endParam) && $endParam !== '') {
+            try {
+                $endDate = Carbon::createFromFormat('Y-m-d', $endParam);
+            } catch (\Throwable) {
+                try {
+                    $endDate = Carbon::parse($endParam);
+                } catch (\Throwable) {
+                    $endDate = null;
+                }
+            }
+        }
+        $end = ($endDate ?? Carbon::now())->startOfDay();
+        $start = $end->copy()->subDays($days - 1)->startOfDay();
+        $endAt = $end->copy()->endOfDay();
+
         $rows = DB::table('item_movements as m')
             ->join('item_variants as v', 'v.id', '=', 'm.variant_id')
-            ->where('m.movement_at', '>=', $start)
+            ->whereBetween('m.movement_at', [$start, $endAt])
             ->selectRaw('DATE(m.movement_at) as d')
             ->selectRaw('COALESCE(SUM(CASE WHEN m.type = "out" THEN m.qty * v.selling_price ELSE 0 END), 0) as sales')
+            ->selectRaw('COALESCE(SUM(CASE WHEN m.type = "out" THEN m.qty ELSE 0 END), 0) as sales_qty')
             ->selectRaw('COALESCE(SUM(CASE WHEN m.type = "in" THEN m.qty * v.purchase_price ELSE 0 END), 0) as purchase')
             ->groupBy('d')
             ->orderBy('d')
@@ -74,13 +119,13 @@ class DashboardController extends Controller
 
         $series = [];
         $date = $start->copy();
-        $end = Carbon::now()->startOfDay();
         while ($date->lte($end)) {
             $key = $date->toDateString();
             $row = $rows->get($key);
             $series[] = [
                 'date' => $key,
                 'sales' => (float) ($row->sales ?? 0),
+                'sales_qty' => (int) ($row->sales_qty ?? 0),
                 'purchase' => (float) ($row->purchase ?? 0),
             ];
             $date->addDay();
@@ -98,6 +143,9 @@ class DashboardController extends Controller
         if ($days < 1) {
             $days = 30;
         }
+        if ($days > 3650) {
+            $days = 3650;
+        }
 
         $limit = (int) request()->integer('limit', 10);
         if ($limit < 1) {
@@ -107,13 +155,27 @@ class DashboardController extends Controller
             $limit = 50;
         }
 
-        $start = Carbon::now()->subDays($days - 1)->startOfDay();
+        $endParam = request()->query('end');
+        $endDate = null;
+        if (is_string($endParam) && $endParam !== '') {
+            try {
+                $endDate = Carbon::createFromFormat('Y-m-d', $endParam);
+            } catch (\Throwable) {
+                try {
+                    $endDate = Carbon::parse($endParam);
+                } catch (\Throwable) {
+                    $endDate = null;
+                }
+            }
+        }
+        $end = ($endDate ?? Carbon::now())->endOfDay();
+        $start = $end->copy()->subDays($days - 1)->startOfDay();
 
         $rows = DB::table('item_movements as m')
             ->join('item_variants as v', 'v.id', '=', 'm.variant_id')
             ->join('items as i', 'i.id', '=', 'v.item_id')
             ->where('m.type', '=', 'out')
-            ->where('m.movement_at', '>=', $start)
+            ->whereBetween('m.movement_at', [$start, $end])
             ->selectRaw('v.id as variant_id')
             ->selectRaw('i.name as item_name')
             ->selectRaw('v.name as variant_name')

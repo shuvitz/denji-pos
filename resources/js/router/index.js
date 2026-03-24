@@ -5,6 +5,7 @@ const LoginPage = () => import('../pages/LoginPage.vue');
 const DashboardPage = () => import('../pages/DashboardPage.vue');
 const ItemsPage = () => import('../pages/ItemsPage.vue');
 const CategoriesPage = () => import('../pages/CategoriesPage.vue');
+const CustomersPage = () => import('../pages/CustomersPage.vue');
 const ItemMovementsPage = () => import('../pages/ItemMovementsPage.vue');
 const ItemVariantsPage = () => import('../pages/ItemVariantsPage.vue');
 const ReferenceTypesPage = () => import('../pages/ReferenceTypesPage.vue');
@@ -42,6 +43,11 @@ const routes = [
                 path: '/categories',
                 name: 'categories',
                 component: CategoriesPage,
+            },
+            {
+                path: '/customers',
+                name: 'customers',
+                component: CustomersPage,
             },
             {
                 path: '/item-movements',

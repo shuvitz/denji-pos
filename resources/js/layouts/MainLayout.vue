@@ -209,6 +209,7 @@ const navItems = [
     { label: 'Items', to: '/items' },
     { label: 'Item variants', to: '/item-variants' },
     { label: 'Categories', to: '/categories' },
+    { label: 'Customers', to: '/customers' },
     { label: 'Reference types', to: '/reference-types' },
     { label: 'Stock movements', to: '/item-movements' },
 ];

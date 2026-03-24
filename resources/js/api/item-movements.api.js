@@ -10,6 +10,10 @@ export function createItemMovement(payload) {
     return http.post('/item-movements', payload);
 }
 
+export function createItemMovementsBulk(payload) {
+    return http.post('/item-movements/bulk', payload);
+}
+
 export function updateItemMovement(id, payload) {
     return http.put(`/item-movements/${id}`, payload);
 }
@@ -17,4 +21,3 @@ export function updateItemMovement(id, payload) {
 export function deleteItemMovement(id) {
     return http.delete(`/item-movements/${id}`);
 }
-

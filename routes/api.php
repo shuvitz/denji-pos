@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CategoryController;
+use App\Http\Controllers\Api\CustomerController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\ItemController;
 use App\Http\Controllers\Api\ItemMovementController;
@@ -35,8 +36,14 @@ Route::middleware('web')->group(function () {
 
         Route::get('/item-movements', [ItemMovementController::class, 'index']);
         Route::post('/item-movements', [ItemMovementController::class, 'store']);
+        Route::post('/item-movements/bulk', [ItemMovementController::class, 'storeBulk']);
         Route::put('/item-movements/{movement}', [ItemMovementController::class, 'update']);
         Route::delete('/item-movements/{movement}', [ItemMovementController::class, 'destroy']);
+
+        Route::get('/customers', [CustomerController::class, 'index']);
+        Route::post('/customers', [CustomerController::class, 'store']);
+        Route::put('/customers/{customer}', [CustomerController::class, 'update']);
+        Route::delete('/customers/{customer}', [CustomerController::class, 'destroy']);
 
         Route::get('/reference-types', [ReferenceTypeController::class, 'index']);
         Route::post('/reference-types', [ReferenceTypeController::class, 'store']);

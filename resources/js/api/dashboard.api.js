@@ -1,7 +1,9 @@
 import http from './http';
 
-export async function fetchDashboardStats() {
-    const { data } = await http.get('/dashboard/stats');
+export async function fetchDashboardStats(days = 30, end = null) {
+    const params = { days };
+    if (end) params.end = end;
+    const { data } = await http.get('/dashboard/stats', { params });
     return data.data;
 }
 
