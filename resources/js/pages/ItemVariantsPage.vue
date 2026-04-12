@@ -32,9 +32,6 @@
                                     Color
                                 </th>
                                 <th class="px-4 py-2 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                                    Purchase price
-                                </th>
-                                <th class="px-4 py-2 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
                                     Selling price
                                 </th>
                                 <th class="px-4 py-2 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
@@ -63,9 +60,6 @@
                                     {{ variant.color ?? '—' }}
                                 </td>
                                 <td class="px-4 py-2 text-sm text-right">
-                                    {{ variant.purchase_price ?? 0 }}
-                                </td>
-                                <td class="px-4 py-2 text-sm text-right">
                                     {{ variant.selling_price ?? 0 }}
                                 </td>
                                 <td class="px-4 py-2 text-sm text-right">
@@ -88,7 +82,7 @@
                                 </td>
                             </tr>
                             <tr v-if="!isLoading && variants.length === 0">
-                                <td colspan="9" class="px-4 py-6 text-center text-sm text-muted-foreground">
+                                <td colspan="8" class="px-4 py-6 text-center text-sm text-muted-foreground">
                                     No variants yet.
                                 </td>
                             </tr>

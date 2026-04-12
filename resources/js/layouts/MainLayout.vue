@@ -21,6 +21,7 @@
                     class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition"
                     active-class="bg-sidebar-accent text-sidebar-accent-foreground"
                 >
+                    <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path :d="item.icon" /></svg>
                     {{ item.label }}
                 </RouterLink>
             </nav>
@@ -203,15 +204,52 @@ const passwordForm = reactive({
     password: '',
     password_confirmation: '',
 });
-
 const navItems = [
-    { label: 'Dashboard', to: '/dashboard' },
-    { label: 'Items', to: '/items' },
-    { label: 'Item variants', to: '/item-variants' },
-    { label: 'Categories', to: '/categories' },
-    { label: 'Customers', to: '/customers' },
-    { label: 'Reference types', to: '/reference-types' },
-    { label: 'Stock movements', to: '/item-movements' },
+    { 
+        label: 'Dashboard', 
+        to: '/dashboard', 
+        icon: 'm3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z M9 22V12h6v10' 
+    },
+    { 
+        label: 'Laporan Harian', 
+        to: '/daily-report', 
+        icon: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6 M16 13H8 M16 17H8 M10 9H8' 
+    },
+    { 
+        label: 'Items', 
+        to: '/items', 
+        icon: 'M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z M3.27 6.96L12 12.01l8.73-5.05 M12 22.08V12' 
+    },
+    { 
+        label: 'Item variants', 
+        to: '/item-variants', 
+        icon: 'M12 2 2 7l10 5 10-5-10-5Z M2 17l10 5 10-5 M2 12l10 5 10-5' 
+    },
+    { 
+        label: 'Customers', 
+        to: '/customers', 
+        icon: 'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2 M9 7a4 4 0 1 0 0-8 4 4 0 0 0 0 8z M22 21v-2a4 4 0 0 0-3-3.87 M16 3.13a4 4 0 0 1 0 7.75' 
+    },
+    { 
+        label: 'Stock movements', 
+        to: '/item-movements', 
+        icon: 'm7 15 5 5 5-5 M7 9l5-5 5 5 M12 4v16' 
+    },
+    { 
+        label: 'Kitchen', 
+        to: '/kitchen', 
+        icon: 'M2 21h20 M12 3v1 M16 3v1 M8 3v1 M5 7a4 4 0 0 0 4 4h6a4 4 0 0 0 4-4V5H5v2Z M12 11v10' 
+    },
+    { 
+        label: 'Reference types', 
+        to: '/reference-types', 
+        icon: 'M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l6.58-6.58c.94-.94.94-2.48 0-3.42L12 2Z M7 7h.01' 
+    },
+    { 
+        label: 'Categories', 
+        to: '/categories', 
+        icon: 'M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z' 
+    },
 ];
 
 async function handleLogout() {

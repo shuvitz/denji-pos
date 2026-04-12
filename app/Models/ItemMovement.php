@@ -16,6 +16,7 @@ class ItemMovement extends Model
         'qty',
         'cost_per_unit',
         'reference_id',
+        'order_id',
         'customer_id',
         'note',
         'movement_at',
@@ -44,6 +45,11 @@ class ItemMovement extends Model
     public function customer()
     {
         return $this->belongsTo(Customer::class);
+    }
+
+    public function order()
+    {
+        return $this->belongsTo(Order::class);
     }
 
     public function creator()

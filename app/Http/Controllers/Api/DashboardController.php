@@ -57,20 +57,27 @@ class DashboardController extends Controller
         $totals['stock_value_cost'] = (float) $stockValuation->stock_value_cost;
         $totals['stock_value_sell'] = (float) $stockValuation->stock_value_sell;
 
-        // Sales & margin based on movements of type "out"
-        $sales = DB::table('item_movements as m')
-            ->join('item_variants as v', 'v.id', '=', 'm.variant_id')
-            ->where('m.type', '=', 'out')
-            ->whereBetween('m.movement_at', [$startAt, $endAt])
-            ->selectRaw('COALESCE(SUM(m.qty), 0) as total_qty')
-            ->selectRaw('COALESCE(SUM(m.qty * v.selling_price), 0) as total_sales_amount')
-            ->selectRaw('COALESCE(SUM(m.qty * v.purchase_price), 0) as total_cost_amount')
+        // Sales based on item_movements (since order_items are not used)
+        $sales = DB::table('item_movements as im')
+            ->join('item_variants as v', 'v.id', '=', 'im.variant_id')
+            ->where('im.type', '=', 'out')
+            ->whereBetween('im.movement_at', [$startAt, $endAt])
+            ->selectRaw('COALESCE(SUM(im.qty), 0) as total_qty')
+            ->selectRaw('COALESCE(SUM(im.qty * v.selling_price), 0) as total_sales_amount')
             ->first();
+
+        // Cost based on manual daily_costs table
+        $totalCapital = 0;
+        if (\Illuminate\Support\Facades\Schema::hasTable('daily_costs')) {
+            $totalCapital = (float) DB::table('daily_costs')
+                ->whereBetween('date', [$startAt->toDateString(), $endAt->toDateString()])
+                ->sum('amount');
+        }
 
         $totals['total_sales_qty'] = (int) $sales->total_qty;
         $totals['total_sales_amount'] = (float) $sales->total_sales_amount;
-        $totals['total_cost_amount'] = (float) $sales->total_cost_amount;
-        $totals['total_margin_amount'] = (float) ($sales->total_sales_amount - $sales->total_cost_amount);
+        $totals['total_capital_amount'] = (float) $totalCapital;
+        $totals['total_margin_amount'] = (float) ($sales->total_sales_amount - $totalCapital);
 
         return response()->json([
             'data' => $totals,
@@ -105,28 +112,39 @@ class DashboardController extends Controller
         $start = $end->copy()->subDays($days - 1)->startOfDay();
         $endAt = $end->copy()->endOfDay();
 
-        $rows = DB::table('item_movements as m')
-            ->join('item_variants as v', 'v.id', '=', 'm.variant_id')
-            ->whereBetween('m.movement_at', [$start, $endAt])
-            ->selectRaw('DATE(m.movement_at) as d')
-            ->selectRaw('COALESCE(SUM(CASE WHEN m.type = "out" THEN m.qty * v.selling_price ELSE 0 END), 0) as sales')
-            ->selectRaw('COALESCE(SUM(CASE WHEN m.type = "out" THEN m.qty ELSE 0 END), 0) as sales_qty')
-            ->selectRaw('COALESCE(SUM(CASE WHEN m.type = "in" THEN m.qty * v.purchase_price ELSE 0 END), 0) as purchase')
+        $salesRows = DB::table('item_movements as im')
+            ->join('item_variants as v', 'v.id', '=', 'im.variant_id')
+            ->where('im.type', '=', 'out')
+            ->whereBetween('im.movement_at', [$start, $endAt])
+            ->selectRaw('DATE(im.movement_at) as d')
+            ->selectRaw('COALESCE(SUM(im.qty), 0) as sales_qty')
+            ->selectRaw('COALESCE(SUM(im.qty * v.selling_price), 0) as sales')
             ->groupBy('d')
-            ->orderBy('d')
             ->get()
             ->keyBy('d');
+
+        $purchaseRows = collect();
+        if (\Illuminate\Support\Facades\Schema::hasTable('daily_costs')) {
+            $purchaseRows = DB::table('daily_costs')
+                ->whereBetween('date', [$start->toDateString(), $endAt->toDateString()])
+                ->selectRaw('date as d')
+                ->selectRaw('COALESCE(SUM(amount), 0) as purchase')
+                ->groupBy('d')
+                ->get()
+                ->keyBy('d');
+        }
 
         $series = [];
         $date = $start->copy();
         while ($date->lte($end)) {
             $key = $date->toDateString();
-            $row = $rows->get($key);
+            $sRow = $salesRows->get($key);
+            $pRow = $purchaseRows->get($key);
             $series[] = [
                 'date' => $key,
-                'sales' => (float) ($row->sales ?? 0),
-                'sales_qty' => (int) ($row->sales_qty ?? 0),
-                'purchase' => (float) ($row->purchase ?? 0),
+                'sales' => (float) ($sRow->sales ?? 0),
+                'sales_qty' => (int) ($sRow->sales_qty ?? 0),
+                'purchase' => (float) ($pRow->purchase ?? 0),
             ];
             $date->addDay();
         }
@@ -171,17 +189,17 @@ class DashboardController extends Controller
         $end = ($endDate ?? Carbon::now())->endOfDay();
         $start = $end->copy()->subDays($days - 1)->startOfDay();
 
-        $rows = DB::table('item_movements as m')
-            ->join('item_variants as v', 'v.id', '=', 'm.variant_id')
+        $rows = DB::table('item_movements as im')
+            ->join('item_variants as v', 'v.id', '=', 'im.variant_id')
             ->join('items as i', 'i.id', '=', 'v.item_id')
-            ->where('m.type', '=', 'out')
-            ->whereBetween('m.movement_at', [$start, $end])
+            ->where('im.type', '=', 'out')
+            ->whereBetween('im.movement_at', [$start, $end])
             ->selectRaw('v.id as variant_id')
             ->selectRaw('i.name as item_name')
             ->selectRaw('v.name as variant_name')
             ->selectRaw('v.sku as sku')
-            ->selectRaw('COALESCE(SUM(m.qty), 0) as qty')
-            ->selectRaw('COALESCE(SUM(m.qty * v.selling_price), 0) as amount')
+            ->selectRaw('COALESCE(SUM(im.qty), 0) as qty')
+            ->selectRaw('COALESCE(SUM(im.qty * v.selling_price), 0) as amount')
             ->groupBy('v.id', 'i.name', 'v.name', 'v.sku')
             ->orderByDesc('qty')
             ->limit($limit)
@@ -205,6 +223,106 @@ class DashboardController extends Controller
 
         return response()->json([
             'data' => $data,
+            'message' => 'ok',
+        ]);
+    }
+    /**
+     * Daily operational report.
+     *
+     * Revenue  → SUM(orders.total) for paid orders on the given date
+     * Sales    → order_items grouped by item/variant for paid orders on the given date
+     * Cost     → daily_costs.amount (manual) if exists, ELSE item_movements fallback
+     * Profit   → revenue - cost
+     */
+    public function dailyReport(): JsonResponse
+    {
+        $dateParam = request()->query('date');
+        $date = null;
+        if (is_string($dateParam) && $dateParam !== '') {
+            try {
+                $date = Carbon::createFromFormat('Y-m-d', $dateParam);
+            } catch (\Throwable) {
+                $date = null;
+            }
+        }
+        $day = ($date ?? Carbon::now())->startOfDay();
+        $targetDate = $day->toDateString();
+
+        // 1. Revenue (Omzet) from variant selling price for item movements
+        $revenue = (float) DB::table('item_movements as im')
+            ->join('item_variants as v', 'v.id', '=', 'im.variant_id')
+            ->where('im.type', '=', 'out')
+            ->whereDate('im.movement_at', $targetDate)
+            ->sum(DB::raw('im.qty * v.selling_price'));
+
+        // 2. Sales breakdown by item/variant from item movements
+        $salesBreakdown = DB::table('item_movements as im')
+            ->join('item_variants as v', 'v.id', '=', 'im.variant_id')
+            ->join('items as i', 'i.id', '=', 'im.item_id')
+            ->where('im.type', '=', 'out')
+            ->whereDate('im.movement_at', $targetDate)
+            ->selectRaw('i.name as item_name')
+            ->selectRaw('v.name as variant_name')
+            ->selectRaw('COALESCE(SUM(im.qty), 0) as total_qty')
+            ->selectRaw('COALESCE(SUM(im.qty * v.selling_price), 0) as total_amount')
+            ->groupBy('i.name', 'v.name')
+            ->orderByDesc('total_qty')
+            ->get()
+            ->map(function ($row) {
+                $label = $row->item_name;
+                if (!empty($row->variant_name)) {
+                    $label .= ' - ' . $row->variant_name;
+                }
+                return [
+                    'label' => $label,
+                    'qty' => (int) $row->total_qty,
+                    'amount' => (float) $row->total_amount,
+                ];
+            })
+            ->values();
+
+        // 3. Cost — strictly user manual input
+        $dailyCost = null;
+        if (\Illuminate\Support\Facades\Schema::hasTable('daily_costs')) {
+            $dailyCost = DB::table('daily_costs')
+                ->where('date', $targetDate)
+                ->first();
+        }
+
+        if ($dailyCost) {
+            $cost = (float) $dailyCost->amount;
+            $costSource = 'manual';
+            $dailyCostData = [
+                'id' => (int) $dailyCost->id,
+                'amount' => (float) $dailyCost->amount,
+                'note' => $dailyCost->note,
+            ];
+        } else {
+            $cost = 0;
+            $costSource = 'manual';
+            $dailyCostData = null;
+        }
+
+        // 4. Profit
+        $profit = $revenue - $cost;
+
+        // 5. Transaction count (based on unique movements)
+        $orderCount = (int) DB::table('item_movements')
+            ->where('type', 'out')
+            ->whereDate('movement_at', $targetDate)
+            ->count();
+
+        return response()->json([
+            'data' => [
+                'date' => $targetDate,
+                'revenue' => $revenue,
+                'cost' => $cost,
+                'cost_source' => $costSource,
+                'daily_cost' => $dailyCostData,
+                'profit' => $profit,
+                'order_count' => $orderCount,
+                'sales_breakdown' => $salesBreakdown,
+            ],
             'message' => 'ok',
         ]);
     }

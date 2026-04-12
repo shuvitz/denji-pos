@@ -12,6 +12,7 @@ class ReferenceTypeController extends Controller
     public function index(Request $request): JsonResponse
     {
         $types = ReferenceType::query()
+            ->withCount('movements')
             ->orderBy('name')
             ->paginate(10);
 
@@ -25,6 +26,7 @@ class ReferenceTypeController extends Controller
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255', 'unique:reference_types,name'],
+            'code' => ['nullable', 'string', 'max:50', 'unique:reference_types,code'],
         ]);
 
         $type = ReferenceType::create($validated);
@@ -39,6 +41,7 @@ class ReferenceTypeController extends Controller
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255', 'unique:reference_types,name,' . $referenceType->id],
+            'code' => ['nullable', 'string', 'max:50', 'unique:reference_types,code,' . $referenceType->id],
         ]);
 
         $referenceType->update($validated);

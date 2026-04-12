@@ -11,6 +11,8 @@ import VueApexCharts from 'vue3-apexcharts';
 const auth = useAuthStore();
 
 const period = ref('1m');
+const chartKey = ref(0);
+const isLoading = ref(false);
 
 const periodOptions = [
     { value: '7d', label: '7 days' },
@@ -42,7 +44,7 @@ const periodLabel = computed(() => periodOptions.find((p) => p.value === period.
 
 const primaryStats = ref([
     { label: 'Total sales', value: '—' },
-    { label: 'Total purchase', value: '—' },
+    { label: 'Total capital', value: '—' },
     { label: 'Total margin', value: '—' },
 ]);
 const secondaryStats = ref([
@@ -115,13 +117,13 @@ async function loadStats() {
         ]);
 
         const salesPct = percentChange(stats.total_sales_amount, prev.total_sales_amount);
-        const purchasePct = percentChange(stats.total_cost_amount, prev.total_cost_amount);
+        const purchasePct = percentChange(stats.total_capital_amount, prev.total_capital_amount);
         const marginPct = percentChange(stats.total_margin_amount, prev.total_margin_amount);
         const qtyPct = percentChange(stats.total_sales_qty, prev.total_sales_qty);
 
         primaryStats.value = [
             { label: 'Total sales', value: currency.format(stats.total_sales_amount || 0), pct: salesPct },
-            { label: 'Total purchase', value: currency.format(stats.total_cost_amount || 0), pct: purchasePct },
+            { label: 'Total capital', value: currency.format(stats.total_capital_amount || 0), pct: purchasePct },
             { label: 'Total margin', value: currency.format(stats.total_margin_amount || 0), pct: marginPct },
             { label: 'Low stock variants', value: numberFmt.format(stats.low_stock_count || 0) },
             // { label: 'Total selling by pcs', value: numberFmt.format(stats.total_sales_qty || 0), pct: qtyPct },
@@ -174,8 +176,13 @@ const trendLineOptions = computed(() => ({
             style: { colors: 'var(--color-muted-foreground)' },
             formatter: (value) => {
                 const idx = trendDates.value.indexOf(value);
-                if (idx === -1) return value;
+                // When transitioning, if value isn't found, keep it hidden to avoid clutter
+                if (idx === -1) return '';
+                
+                // Always show first and last labels
                 if (idx === 0 || idx === trendDates.value.length - 1) return formatAxisDate(value);
+                
+                // Keep the exact same skipped-date spacing (Mar 13, Mar 19) no matter the filter
                 return idx % 6 === 0 ? formatAxisDate(value) : '';
             },
         },
@@ -261,8 +268,10 @@ const topSellingBarOptions = computed(() => ({
     },
 }));
 
-onMounted(() => {
-    applyPeriod();
+onMounted(async () => {
+    isLoading.value = true;
+    await applyPeriod();
+    isLoading.value = false;
 });
 
 async function applyPeriod() {
@@ -271,11 +280,15 @@ async function applyPeriod() {
         loadTrends(),
         loadTopSellingVariants(),
     ]);
+    chartKey.value++;
 }
 
 async function setPeriod(next) {
+    if (period.value === next) return;
     period.value = next;
+    isLoading.value = true;
     await applyPeriod();
+    isLoading.value = false;
 }
 </script>
 
@@ -340,8 +353,11 @@ async function setPeriod(next) {
             </CardHeader>
             <CardContent>
                 <div class="w-full">
-                    <div v-if="trendSeries.length" class="w-full">
-                        <VueApexCharts type="line" height="260" :options="trendLineOptions" :series="trendLineSeries" />
+                    <div v-if="isLoading" class="h-64 flex items-center justify-center text-sm tracking-wide text-muted-foreground animate-pulse">
+                        Loading...
+                    </div>
+                    <div v-else-if="trendSeries.length" class="w-full">
+                        <VueApexCharts :key="'trend-'+chartKey" type="line" height="260" :options="trendLineOptions" :series="trendLineSeries" />
                     </div>
                     <div v-else class="h-64 flex items-center justify-center text-sm text-muted-foreground">
                         No data
@@ -357,8 +373,11 @@ async function setPeriod(next) {
             </CardHeader>
             <CardContent>
                 <div class="w-full">
-                    <div v-if="topSellingVariants.length" class="w-full">
-                        <VueApexCharts type="bar" height="320" :options="topSellingBarOptions" :series="topSellingQtySeries" />
+                    <div v-if="isLoading" class="h-64 flex items-center justify-center text-sm tracking-wide text-muted-foreground animate-pulse">
+                        Loading...
+                    </div>
+                    <div v-else-if="topSellingVariants.length" class="w-full">
+                        <VueApexCharts :key="'bar-'+chartKey" type="bar" height="320" :options="topSellingBarOptions" :series="topSellingQtySeries" />
                     </div>
                     <div v-else class="h-64 flex items-center justify-center text-sm text-muted-foreground">
                         No data

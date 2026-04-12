@@ -9,6 +9,8 @@ const CustomersPage = () => import('../pages/CustomersPage.vue');
 const ItemMovementsPage = () => import('../pages/ItemMovementsPage.vue');
 const ItemVariantsPage = () => import('../pages/ItemVariantsPage.vue');
 const ReferenceTypesPage = () => import('../pages/ReferenceTypesPage.vue');
+const KitchenPage = () => import('../pages/KitchenPage.vue');
+const DailyReportPage = () => import('../pages/DailyReportPage.vue');
 
 // Layout
 const MainLayout = () => import('../layouts/MainLayout.vue');
@@ -63,6 +65,16 @@ const routes = [
                 path: '/reference-types',
                 name: 'reference-types',
                 component: ReferenceTypesPage,
+            },
+            {
+                path: '/kitchen',
+                name: 'kitchen',
+                component: KitchenPage,
+            },
+            {
+                path: '/daily-report',
+                name: 'daily-report',
+                component: DailyReportPage,
             },
         ],
     },

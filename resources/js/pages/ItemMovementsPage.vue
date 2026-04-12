@@ -132,7 +132,7 @@
             v-if="dialogOpen"
             class="fixed inset-0 z-40 flex items-center justify-center bg-black/40"
         >
-            <div class="w-full max-w-4xl rounded-lg bg-card p-6 shadow-lg">
+            <div class="w-full max-w-6xl rounded-lg bg-card p-6 shadow-lg">
                 <div class="flex items-center justify-between mb-4">
                     <h2 class="text-lg font-semibold">
                         {{ editingMovement ? 'Edit movement' : 'Add movement' }}

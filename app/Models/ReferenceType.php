@@ -11,6 +11,7 @@ class ReferenceType extends Model
 
     protected $fillable = [
         'name',
+        'code',
     ];
 
     public function movements()

@@ -3,10 +3,13 @@
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\CustomerController;
+use App\Http\Controllers\Api\DailyCostController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\ItemController;
 use App\Http\Controllers\Api\ItemMovementController;
 use App\Http\Controllers\Api\ItemVariantController;
+use App\Http\Controllers\Api\KitchenOrderController;
+use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\ReferenceTypeController;
 use Illuminate\Support\Facades\Route;
 
@@ -53,5 +56,22 @@ Route::middleware('web')->group(function () {
         Route::get('/dashboard/stats', [DashboardController::class, 'stats']);
         Route::get('/dashboard/trends', [DashboardController::class, 'trends']);
         Route::get('/dashboard/top-selling-variants', [DashboardController::class, 'topSellingVariants']);
+        Route::get('/dashboard/daily-report', [DashboardController::class, 'dailyReport']);
+
+        // Daily costs
+        Route::get('/daily-costs', [DailyCostController::class, 'show']);
+        Route::post('/daily-costs', [DailyCostController::class, 'store']);
+
+        // Orders
+        Route::get('/orders', [OrderController::class, 'index']);
+        Route::post('/orders', [OrderController::class, 'store']);
+        Route::get('/orders/{order}', [OrderController::class, 'show']);
+        Route::post('/orders/{order}/pay', [OrderController::class, 'pay']);
+        Route::post('/orders/{order}/cancel', [OrderController::class, 'cancel']);
+
+        // Kitchen
+        Route::get('/kitchen/orders', [KitchenOrderController::class, 'index']);
+        Route::post('/kitchen/orders/{order}/ready', [KitchenOrderController::class, 'markReady']);
+        Route::get('/kitchen/orders/ready', [KitchenOrderController::class, 'ready']);
     });
 });

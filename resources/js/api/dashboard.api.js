@@ -16,3 +16,15 @@ export async function fetchTopSellingVariants(days = 30, limit = 10) {
     const { data } = await http.get('/dashboard/top-selling-variants', { params: { days, limit } });
     return data.data;
 }
+
+export async function fetchDailyReport(date = null) {
+    const params = {};
+    if (date) params.date = date;
+    const { data } = await http.get('/dashboard/daily-report', { params });
+    return data.data;
+}
+
+export async function saveDailyCost(payload) {
+    const { data } = await http.post('/daily-costs', payload);
+    return data.data;
+}
